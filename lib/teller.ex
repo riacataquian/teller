@@ -1,6 +1,27 @@
+defmodule Wat do
+  def puts(message, color \\ :red) do
+    IO.puts IO.ANSI.format [color, message]
+  end
+end
+
+defmodule BankQueue do
+  use GenServer
+  import Wat
+
+  def start do
+    Teller.Supervisor.start
+  end
+
+  def push(queue) do
+    GenServer.cast(:tv, {:push, queue |> Enum.to_list})
+    GenServer.call(:tv, :get_queue)
+  end
+
+end
+
 defmodule Teller do
   use GenServer
-  require Logger
+  import Wat
 
   @doc """
   1. Ask Job
@@ -23,9 +44,9 @@ defmodule Teller do
   def handle_cast({:receive_job, []}, _state) do
     Process.sleep(500)
 
-    Logger.info "Received: :waiting --------- Process: #{inspect self}"
+    puts "Received: :waiting --------- Process: #{inspect self}", :cyan
 
-    Logger.warn "Simulating server shutdown.."
+    puts "Simulating server shutdown.."
 
     GenServer.stop(:tv, :brutal_kill)
 
@@ -37,7 +58,7 @@ defmodule Teller do
   def handle_cast({:receive_job, job}, state) do
     Process.sleep(500)
 
-    Logger.info "Received: #{job} --------- Process: #{inspect self}"
+    puts "Received: #{job} --------- Process: #{inspect self}", :cyan
     GenServer.cast(:tv, {:ask, self}) 
 
     {:noreply, state}
@@ -45,8 +66,8 @@ defmodule Teller do
 end
 
 defmodule TV do
-  require Logger
   use GenServer
+  import Wat
 
   @doc """
   1. Receive demand
@@ -63,14 +84,8 @@ defmodule TV do
     {:ok, state}
   end
 
-  def push(queue) do
-    GenServer.cast(:tv, {:push, queue |> Enum.to_list})
-
-    GenServer.call(:tv, :get_queue)
-  end
-
   def handle_call(:get_queue, _from, state) do
-    Logger.error "Current queue size: #{inspect length(state)}"
+    puts "Current queue size: #{inspect length(state)}", :green
 
     {:reply, state, state}
   end
@@ -78,7 +93,7 @@ defmodule TV do
   def handle_cast({:push, items}, state) do
     new_state = state ++ items
 
-    Logger.warn "Pushing new items on TV: #{inspect new_state}"
+    puts "Pushing new items on TV: #{inspect new_state}", :cyan
 
     {:noreply, new_state}
   end
@@ -86,7 +101,7 @@ defmodule TV do
   def handle_cast({:ask, sender}, []) do
     GenServer.cast(sender, {:receive_job, []})
 
-    Logger.error "Sender: #{inspect sender} --------- Job: empty"
+    puts "Sender: #{inspect sender} --------- Job: empty", :red
 
     {:noreply, []} 
   end
@@ -94,7 +109,7 @@ defmodule TV do
   def handle_cast({:ask, sender}, [head | tail]) do
     GenServer.cast(sender, {:receive_job, head})
 
-    Logger.warn "Sender: #{inspect sender} --------- Job: #{head}"
+    puts "Sender: #{inspect sender} --------- Job: #{head}", :cyan
 
     {:noreply, tail} 
   end
