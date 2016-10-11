@@ -1,20 +1,23 @@
-defmodule Wat do
-  def puts(message, color \\ :red) do
-    IO.puts IO.ANSI.format [color, message]
-  end
-end
-
 defmodule BankQueue do
   use GenServer
   import Wat
 
-  def start do
-    Teller.Supervisor.start
+  def start(queue  \\ 1..5) do
+    TV.Supervisor.start(queue)
+  end
+
+
+  def start_tellers do
+    Teller.start_link
+  end
+
+  def get_queue do
+    GenServer.call({:global, :tv}, :get_queue)
   end
 
   def push(queue) do
-    GenServer.cast(:tv, {:push, queue |> Enum.to_list})
-    GenServer.call(:tv, :get_queue)
+    GenServer.cast({:global, :tv}, {:push, queue |> Enum.to_list})
+    get_queue
   end
 
 end
@@ -36,7 +39,7 @@ defmodule Teller do
   end
 
   def init(state) do
-   GenServer.cast(:tv, {:ask, self}) 
+   GenServer.cast({:global, :tv}, {:ask, self}) 
 
    {:ok, state}
   end
@@ -48,9 +51,8 @@ defmodule Teller do
 
     puts "Simulating server shutdown.."
 
-    GenServer.stop(:tv, :brutal_kill)
-
-    GenServer.cast(:tv, {:ask, self}) 
+    GenServer.stop({:global, :tv}, :brutal_kill)
+    GenServer.cast({:global, :tv}, {:ask, self}) 
 
     {:noreply, []}
   end
@@ -59,7 +61,7 @@ defmodule Teller do
     Process.sleep(500)
 
     puts "Received: #{job} --------- Process: #{inspect self}", :cyan
-    GenServer.cast(:tv, {:ask, self}) 
+    GenServer.cast({:global, :tv}, {:ask, self}) 
 
     {:noreply, state}
   end
@@ -75,13 +77,7 @@ defmodule TV do
   """
 
   def start_link(queue) do
-    GenServer.start_link(__MODULE__, queue |> Enum.to_list, name: :tv)
-  end
-
-  def init(state) do
-    Teller.start_link
-
-    {:ok, state}
+    GenServer.start_link(__MODULE__, queue |> Enum.to_list, name: {:global, :tv})
   end
 
   def handle_call(:get_queue, _from, state) do
