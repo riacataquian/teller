@@ -9,7 +9,9 @@ defmodule Teller do
   """
 
   def start_link do
-    GenServer.start_link(__MODULE__, [])
+    for _ <- 1..3 do
+      GenServer.start_link(__MODULE__, [])
+    end
   end
 
   def init(state) do
@@ -22,6 +24,11 @@ defmodule Teller do
     Process.sleep(500)
 
     Logger.info "Received: :waiting --------- Process: #{inspect self}"
+
+    Logger.warn "Simulating server shutdown.."
+
+    GenServer.stop(:tv, :brutal_kill)
+
     GenServer.cast(:tv, {:ask, self}) 
 
     {:noreply, []}
@@ -58,6 +65,14 @@ defmodule TV do
 
   def push(queue) do
     GenServer.cast(:tv, {:push, queue |> Enum.to_list})
+
+    GenServer.call(:tv, :get_queue)
+  end
+
+  def handle_call(:get_queue, _from, state) do
+    Logger.error "Current queue size: #{inspect length(state)}"
+
+    {:reply, state, state}
   end
 
   def handle_cast({:push, items}, state) do
