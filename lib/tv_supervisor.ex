@@ -5,12 +5,13 @@ defmodule TV.Supervisor do
   def start(queue \\ 1..5) do
     import Supervisor.Spec
 
+    # TODO: Supervise tv and teller
     children = [
       worker(TV, [queue], name: TV)
     ]
 
-    {:ok, pid} = Supervisor.start_link(children, strategy: :one_for_one, max_restarts: 199)
+    {:ok, pid} = Supervisor.start_link(children, strategy: :one_for_one, name: __MODULE__)
 
-    puts "Starting supervisor: #{inspect pid}", :magenta
+    puts "Starting TV supervisor: #{inspect pid}", :magenta
   end
 end
