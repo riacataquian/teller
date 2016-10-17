@@ -2,7 +2,7 @@ defmodule Teller.Supervisor do
   use GenServer
   import Wat
 
-  def start do
+  def start_link do
     import Supervisor.Spec
 
     children = [
@@ -13,6 +13,6 @@ defmodule Teller.Supervisor do
 
     puts "Starting Teller supervisor: #{inspect sup}", :magenta
 
-    sup
+    {:ok, sup}
   end
 end

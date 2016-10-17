@@ -11,7 +11,7 @@ defmodule BankQueue do
   end
 
   def start(queue  \\ 1..5) do
-    TV.Supervisor.start(queue)
+    BankQueue.Supervisor.start(queue)
   end
 
   # TODO: Spawn list of tellers
@@ -40,6 +40,11 @@ defmodule BankQueue do
   def push(queue) do
     GenServer.cast({:global, :tv}, {:push, queue |> Enum.to_list})
     get_queue
+  end
+
+  def stop(server_name) do
+    pid = Process.whereis(server_name)
+    Process.exit(pid, :kill)
   end
 
   defp start_new_teller(sup) do
