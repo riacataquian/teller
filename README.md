@@ -1,6 +1,16 @@
 # Teller
 
-**TODO: Add description**
+```
+iex> BankQueue.start
+```
+
+```
+iex> for _n <- 1..10, do: BankQueue.start_tellers
+```
+
+```
+iex> BankQueue.push 1..1000
+```
 
 ## Installation
 
